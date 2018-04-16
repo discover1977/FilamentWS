@@ -5,7 +5,7 @@
  *      Author: gavrilov.iv
  */
 
-// Основные включения
+// General inclusion
 #include <avr/io.h>
 #include <avr/eeprom.h>
 #include <util/delay.h>
@@ -13,14 +13,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Пользовательские включения
+// User inclusion
 #include "MAX72xx.h"
 #include "HX711.h"
 #include "weight_scales.h"
 #include "encoder.h"
 #include "buttons.h"
 
-// Определители
+// Definitions
 #define CALIBRATION_AVERAGE	25		// Количество выборок для усреднения калибровки
 #define MES_AVERAGE	5				// Количество выборок для измерения веса
 
@@ -30,7 +30,7 @@
 
 #define EEPROM_INIT			0x01
 
-// Перечислитель пунктов меню
+// Menu items enumerator
 enum EnumSettingItem {
 	StartSetting,
 		Calibration,
@@ -41,22 +41,21 @@ enum EnumSettingItem {
 	EndSetting
 };
 
-// Глобальные переменные
-volatile uint8_t ButtonCode, ButtonEvent, EncoderState;	// Переменные кода кнопки, событий и состояния энкодера
-volatile uint16_t ExitCnt = 0;							// Переменная таймаута выхода
+// Global variables
+volatile uint8_t ButtonCode, ButtonEvent, EncoderState;	// Button code and even variables. Encoder state variable
+volatile uint16_t ExitCnt = 0;							// Timeout variable
 
-// Структура параметров EEPROM
+// Struct EEPROM data
 struct EEPROMData {
-	uint8_t WSIsCalibrated;			// Флаг - калибровка весов выполнена
-	float CalibrationFactor;		// Значение калибровочного коэфициента
-	uint16_t CalibrationWeight;		// Значение калибровочного веса в гарммах
-	uint16_t CoilWeight;			// Значение веса катушки
-	uint32_t WeightScaleZero;		// Значение "нуля"
+	uint8_t WSIsCalibrated;			// Flag - scales is calibrated
+	float CalibrationFactor;		// Calibration coefficient value
+	uint16_t CalibrationWeight;		// Weight of calibration standard value
+	uint16_t CoilWeight;			// Coil weight value
+	uint32_t WeightScaleZero;		// Weight "zero" value
 } Param;
 
-/******************** Функции ********************/
 /*
- * Опрос кнопки
+ * Fetch button and event code
  */
 void get_but() {
 	ButtonCode = BUT_GetBut();
@@ -64,7 +63,7 @@ void get_but() {
 }
 
 /*
- * Инициализация параметров EEPROM
+ * Initializations EEPROM parameters
  */
 void eeprom_init() {
 	Param.CalibrationWeight = 1000;
@@ -73,7 +72,7 @@ void eeprom_init() {
 }
 
 /*
- * Сохранение параметров EEPROM
+ * Save EEPROM parameters
  */
 void save_eeprom() {
 	cli();
@@ -82,10 +81,10 @@ void save_eeprom() {
 }
 
 /*
- * Обработчик таймера
- * Опрос энкодера
- * Опрос кнопки
- * Реализация таймера таймаута
+ * Timer handler
+ * Encoder poll
+ * Button poll
+ * Timeout timer realization
  */
 ISR(TIMER0_COMPA_vect) {
 	TCNT0 = 0x00;
@@ -95,7 +94,7 @@ ISR(TIMER0_COMPA_vect) {
 }
 
 /*
- * Функция тестирования кнопки и энкодера
+ * Button and encoder testing function
  */
 void encoder_test() {
 	MAX72xx_Clear(0);
@@ -148,8 +147,7 @@ void encoder_test() {
 }
 
 /*
- * Функция ввода числа
- * Входные параметры: число, количество разрядов
+ * Function of entering numbers
  */
 uint16_t input_digit(uint16_t InputValue, uint8_t NumberOfDigits) {
 	int8_t InputValArray[NumberOfDigits], CommaPos = 1;
@@ -201,7 +199,7 @@ uint16_t input_digit(uint16_t InputValue, uint8_t NumberOfDigits) {
 }
 
 /*
- * Калибровка "нуля"
+ * Weight scales "null" calibration function
  */
 void calibration_zero() {
 	MAX72xx_OutSym("--------", 8);
@@ -220,7 +218,7 @@ void calibration_zero() {
 }
 
 /*
- * Калибровка весов
+ * Weight scales calibration with standard
  */
 void calibration() {
 	calibration_zero();
@@ -267,14 +265,14 @@ void calibration() {
 }
 
 /*
- * Ввод веса катушки
+ * Entering the weight of the coil
  */
 void input_coil_weight() {
 	Param.CoilWeight = input_digit(Param.CoilWeight, 3);
 }
 
 /*
- * Реализация меню настроек
+ * Setting menu
  */
 void setting() {
 	int8_t SettingItem = Calibration;
@@ -351,7 +349,7 @@ void setting() {
 }
 
 /*
- * Главная функция
+ * Main function
  */
 int main()
 {
@@ -374,34 +372,34 @@ int main()
     OCR0A = 0x7C;
     TIMSK0 = ( 1 << OCIE0A );
 
-    // Чтение параметров из EEPROM
+    // Read parameters from EEPROM
 	eeprom_read_block( (uint8_t*)&Param, 0, sizeof( Param ) );
 
-	// Проверка параметров EEPROM
+	// Checking EEPROM parameters
 	if(Param.WSIsCalibrated == EEPROM_INIT) {
 		WSCALES_SetCalibrationFactor(Param.CalibrationFactor);
 		WSCALE_SetZero(Param.WeightScaleZero);
 	}
 	else {
-		// Инициализация параметров EEPROM
+		// Initializations EEPROM parameters
 		eeprom_init();
-		// Сохранение параметров в EEPROM
+		// Save EEPROM parameters
 		save_eeprom();
 	}
 
 	sei();
 
 	while(1) {
-		// Получение состояния кнопки
+		// Fetch button and event code
 		get_but();
 
-		// Отбражение веса если калибровка выполнена
+		// Weight display if calibration is performed
 		if(Param.WSIsCalibrated == EEPROM_INIT) {
 			Weigth = (int32_t)WSCALES_GetWeight(MES_AVERAGE);
 			MAX72xx_OutIntFormat(Weigth - Param.CoilWeight, 3, 8, 6);
 		}
 		else {
-			MAX72xx_OutSym("________", 8);	// Отображение подчеркиваний если калибровка не выполнена
+			MAX72xx_OutSym("________", 8);	// Underline display if calibration is not performed
 		}
 
 		// Вход в меню настройки
