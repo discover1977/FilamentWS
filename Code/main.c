@@ -1,7 +1,7 @@
 /*
  * main.c
  *
- *  Created on: 5 апреля. 2018 г.
+ *  Created on: 5 April. 2018 г.
  *      Author: gavrilov.iv
  */
 
@@ -21,12 +21,12 @@
 #include "buttons.h"
 
 // Definitions
-#define CALIBRATION_AVERAGE	25		// Количество выборок для усреднения калибровки
-#define MES_AVERAGE	5				// Количество выборок для измерения веса
+#define CALIBRATION_AVERAGE	25		// Number of samples for averaging the calibration
+#define MES_AVERAGE	5				// Number of samples for weight measurement
 
-#define EXIT_DIGIT_INPUT	20000	// Таймаут для выхода из меню ввода числа
-#define EXIT_TEST_ENCODER	10000	// Таймаут для выхода из меню тестирования энкодера и кнопки
-#define EXIT_SETTING		20000	// Таймаут для выходы из меню настроек
+#define EXIT_DIGIT_INPUT	20000	// Timeout to exit the number entry menu
+#define EXIT_TEST_ENCODER	10000	// Timeout for exit from the encoder test menu and the button
+#define EXIT_SETTING		20000	// Timeout for exits from the settings menu
 
 #define EEPROM_INIT			0x01
 
